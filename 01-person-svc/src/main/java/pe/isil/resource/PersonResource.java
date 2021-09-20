@@ -2,10 +2,12 @@ package pe.isil.resource;
 
 
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.isil.model.Person;
 import pe.isil.service.PersonService;
-
 
 
 import java.util.List;
@@ -14,48 +16,64 @@ import java.util.List;
 @RestController
 public class PersonResource {
 
-
+    //Inicializa PersonService
     private final PersonService personService;
 
-    public PersonResource(PersonService personService){
+    public PersonResource(@Qualifier("personDBAService") PersonService personService) {
         this.personService = personService;
     }
 
+
     @GetMapping
-    public List<Person> getPerson(){
-        return personService.getAll();
+    public ResponseEntity<List<Person>> getPerson(){
+        List<Person> personList = personService.getAll();
+        if (personList.isEmpty()){
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(personList,HttpStatus.OK);
     }
 
     @PostMapping
-    public Person createPerson(@RequestBody Person person){
-            personService.create(person);
-            return person;
+    public ResponseEntity<Person> createPerson(@RequestBody Person person){
+        personService.create(person);
+            return new ResponseEntity<>(person,HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
-    public Person updatePerson(@RequestBody Person person,@PathVariable Integer id){
+    public ResponseEntity<Person> updatePerson(@RequestBody Person person,@PathVariable Integer id){
             Person currentPerson = personService.findById(id);
-            if(currentPerson != null){
-                person.setId(id);
-                personService.update(person);
+
+            if (currentPerson == null){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            return person;
+                person.setId(id);
+                 personService.update(person);
+
+            return new ResponseEntity<>(person,HttpStatus.OK);
     }
 
 
     @DeleteMapping("/{id}")
-    public void deletePerson(@PathVariable Integer id){
+    public ResponseEntity<Person> deletePerson(@PathVariable Integer id){
         Person currentPerson = personService.findById(id);
-        if (currentPerson != null){
-            personService.delete(currentPerson);
+
+        if(currentPerson == null){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
+            personService.delete(currentPerson);
+            return new ResponseEntity<>(HttpStatus.OK);
+
     }
 
     @GetMapping("/{id}")
-    public Person getPerson(@PathVariable Integer id){
+    public ResponseEntity<Person> getPerson(@PathVariable Integer id){
         Person currentPerson = personService.findById(id);
-        return  currentPerson;
+        if (currentPerson == null ){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(currentPerson,HttpStatus.OK);
     }
 
 }
